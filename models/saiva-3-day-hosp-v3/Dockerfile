@@ -1,0 +1,46 @@
+# Install dependencies securely
+FROM python:3.8.16-bullseye as builder
+
+ARG GIT_HASH
+
+RUN apt install -y git openssh-client && rm -rf /tmp/* /var/cache/apk/* &&\
+    mkdir -p /root/.ssh && chmod 0700 /root/.ssh && \
+    ssh-keyscan github.com > /root/.ssh/known_hosts
+
+RUN mkdir install
+ADD ./id_rsa ./id_rsa
+RUN mv ./id_rsa /root/.ssh/id_rsa && chmod 0600 /root/.ssh/id_rsa
+
+RUN pip install pipenv
+ADD Pipfile Pipfile.lock ./
+RUN pipenv requirements > requirements.txt
+RUN pip install --target="/install" -r requirements.txt
+
+RUN rm -f ./id_rsa
+
+
+# Build the final image
+FROM python:3.8.16-bullseye as final
+
+RUN apt update && apt install -y curl gnupg2 gcc python3-dev build-essential unixodbc-dev libpq-dev git wget libfontconfig1 libxrender1
+
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN apt update && ACCEPT_EULA=Y apt install -y msodbcsql17 mssql-tools
+
+RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
+RUN echo 'echo PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
+RUN /bin/bash -c "source ~/.bashrc"
+
+RUN apt install -y locales && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
+
+RUN wget https://github.com/cdr/code-server/releases/download/1.1156-vsc1.33.1/code-server1.1156-vsc1.33.1-linux-x64.tar.gz \
+    && tar -xzvf code-server1.1156-vsc1.33.1-linux-x64.tar.gz && chmod +x code-server1.1156-vsc1.33.1-linux-x64/code-server
+
+COPY --from=builder /install /usr/local
+ENV PYTHONPATH="/usr/local:${PYTHONPATH}"
+
+COPY docker-entrypoint.sh /usr/local/bin/
+ADD ./src /src
+
+ENTRYPOINT ["docker-entrypoint.sh"]

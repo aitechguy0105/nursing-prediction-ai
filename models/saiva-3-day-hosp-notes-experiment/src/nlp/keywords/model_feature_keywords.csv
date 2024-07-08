@@ -1,0 +1,248 @@
+pattern,label
+oxycodone,PAIN_KILLER
+docusil,PAIN_KILLER
+norco,PAIN_KILLER
+tramadol,PAIN_KILLER
+acetaminophen,PAIN_KILLER
+resident refused,REFUSAL
+refused med,REFUSAL
+med not available,NOT_AVAILABLE
+does not need,REFUSAL
+family request,FAMILY_INVOLVEMENT
+doctor orders,DOCTOR_INVOLVEMENT
+abnormal,ABNORMAL
+yelling,ALTERED_MENTAL_STATE
+kick,ALTERED_MENTAL_STATE
+cursing,ALTERED_MENTAL_STATE
+shouting,ALTERED_MENTAL_STATE
+angry,ALTERED_MENTAL_STATE
+kicking,ALTERED_MENTAL_STATE
+aggressive,ALTERED_MENTAL_STATE
+agitation,ALTERED_MENTAL_STATE
+cry,CRY
+crying,CRY
+help,HELP
+failure,FAILURE
+resident alert,ALERT
+resident tolerated,COOPERATIVE
+call light,SUPPORT
+call bell,SUPPORT
+within reach,SUPPORT
+transfer,RISK
+severe,RISK
+increased,RISK
+shift resident,RISK
+adverse,DISCOMFORT
+complaint,DISCOMFORT
+inhale orally,DISCOMFORT
+j-tube displacement,DISCOMFORT
+unresponsive,DISCOMFORT
+discomfort,DISCOMFORT
+distress,DISCOMFORT
+aphasic,DISCOMFORT
+congestion,DISCOMFORT
+skin warm,DISCOMFORT
+fall,FALL
+injury,FALL
+fracture,FALL
+bleeding,BLOOD_THINNER
+redness,REDNESS
+numbness,NUMBNESS
+stiffness,STIFFNESS
+indigestion,INDIGESTION
+blockage,BLOCKAGE
+displacement,DISPLACEMENT
+rash,RASHES
+rashes,RASHES
+pain,PAIN
+headache,HEADACHE
+infection,INFECTION
+wound,WOUND
+puffy looking,INFLAMMATION
+weakness,WEAKNESS
+dizziness,WEAKNESS
+giddiness,WEAKNESS
+pale,WEAKNESS
+fatigue,WEAKNESS
+fear,FEAR
+anxiety,ANXIETY
+restless,ANXIETY
+vomiting,NAUSEA
+nausea,NAUSEA
+strain,STRAIN
+tremor,TREMOR
+itching,ITCHING
+cough,COUGH
+fever,FEVER
+swelling,SWELLING
+constipation,CONSTIPATION
+coronary artery disease,HEART_CONDITION
+diabetes mellitus,DIABETES
+edema,EDEMA
+ulcer,PRESSURE_ULCER
+depression,MENTAL_CONDITION
+schizophrenia,MENTAL_CONDITION
+altered mental status,MENTAL_CONDITION
+insomnia,MENTAL_CONDITION
+dementia,MENTAL_CONDITION
+sleep apnea,SLEEP_DISORDER
+loose stool,DIARRHEA
+diarrhea,DIARRHEA
+seizure,SEIZURE
+low blood pressure,BLOOD_PRESSURE
+low bp,BLOOD_PRESSURE
+high blood pressure,BLOOD_PRESSURE
+high bp,BLOOD_PRESSURE
+shortness of breath,LUNG_CONDITION
+respiratory distress,LUNG_CONDITION
+low oxygen saturation,LUNG_CONDITION
+high respiratory rate,LUNG_CONDITION
+bronchitis,LUNG_CONDITION
+dyspnoea,LUNG_CONDITION
+pneumonia,LUNG_CONDITION
+wheezing,LUNG_CONDITION
+trauma,TRAUMA
+hypertension,HYPERTENSION
+CHF,HEART_CONDITION
+cough,LUNG_CONDITION
+confusion,MENTAL_CONDITION
+confused,MENTAL_CONDITION
+incontinent,UTI
+trachea,LUNG_CONDITION
+trach,LUNG_CONDITION
+sob ,LUNG_CONDITION
+labs,LABS
+complain,DISCOMFORT
+bladder,UTI
+COVID,COVID
+COVID-19,COVID
+inflammation,INFLAMMATION
+catheter,CATHETER
+Foley,CATHETER
+blood sugar,DIABETES
+insulin,DIABETES
+mellitus,DIABETES
+G-Tube,FEEDING_TUBE
+gtube,FEEDING_TUBE
+PEG,FEEDING_TUBE
+morphine,PAIN_KILLER
+lethargy,WEAKNESS
+percocet,PAIN_KILLER
+dialysis,KIDNEY_CONDITION
+tenderness,INFLAMMATION
+murmur,HEART_CONDITION
+glucose,DIABETES
+intravenous,IV
+picc line,IV
+IV,IV
+sodium,SODIUM
+mood,MENTAL_CONDITION
+urinary,UTI
+daughter,FAMILY_INVOLVEMENT
+son,FAMILY_INVOLVEMENT
+husband,FAMILY_INVOLVEMENT
+wife,FAMILY_INVOLVEMENT
+nephew,FAMILY_INVOLVEMENT
+niece,FAMILY_INVOLVEMENT
+appetite,APPETITE
+eat,APPETITE
+eaten,APPETITE
+cannula,IV
+dizziness,WEAKNESS
+coumadin,BLOOD_THINNER
+warfarin,BLOOD_THINNER
+keppra,SEIZURE
+depakote,SEIZURE
+dysuria,UTI
+sacral,PRESSURE_ULCER
+syncope,BLOOD_PRESSURE
+hematuria,HEMATURIA
+paresthesia,NUMBNESS
+palpitation,HEART_CONDITION
+diabetic,DIABETES
+numbness,NUMBNESS
+dysphagia,DYSPHAGIA
+swallowing,DYSPHAGIA
+swollen,EDEMA
+ankles,EDEMA
+aerosol,LUNG_CONDITION
+nebulizer,LUNG_CONDITION
+ble,EDEMA
+pitting,EDEMA
+breakfast,APPETITE
+lunch,APPETITE
+dinner,APPETITE
+snack,APPETITE
+cardiac,HEART_CONDITION
+isolation,INFECTION
+infarction,HEART_CONDITION
+congestive,HEART_CONDITION
+SPO2,LUNG_CONDITION
+O2,LUNG_CONDITION
+pelvis,FALL
+pelvic,FALL
+hip,FALL
+antibiotic,ANTIBIOTIC
+abt,ANTIBIOTIC
+UTI,UTI
+ocycodone,PAIN_KILLER
+cardiac,HEART_CONDITION
+gabapentin,SEIZURE
+colostomy,COLOSTOMY
+pumonary,LUNG_CONDITION
+fed,APPETITE
+COPD,LUNG_CONDITION
+psychatric,ALTERED_MENTAL_STATE
+wheelchair,WHEELCHAIR
+w/c,WHEELCHAIR
+anemia,ANEMIA
+cancer,CANCER
+renal,KIDNEY_CONDITION
+hepatic,LIVER_CONDITION
+hepatoma,LIVER_CONDITION
+hepatomegaly,LIVER_CONDITION
+bile,LIVER_CONDITION
+esrd,KIDNEY_CONDITION
+ckd,KIDNEY_CONDITION
+gfr,KIDNEY_CONDITION
+esrf,KIDNEY_CONDITION
+kidney,KIDNEY_CONDITION
+liver,LIVER_CONDITION
+lung,LUNG_CONDITION
+heart,HEART_CONDITION
+nephritis,KIDNEY_CONDITION
+feeding tube,FEEDING_TUBE
+enteral,FEEDING_TUBE
+systolic,BLOOD_PRESSURE
+diastolic,BLOOD_PRESSURE
+PT/INR,BLOOD_THINNER
+BMP,BASIC_METABOLIC_PANEL
+stat,STAT
+toileting,FALL
+COPD,LUNG_CONDITION
+disturbance,ALTERED_MENTAL_STATE
+lisinopril,BLOOD_PRESSURE
+albuterol,LUNG_CONDITION
+mechanicallly,DYSPHAGIA
+atrial,HEART_CONDITION
+fibrilation,HEART_CONDITION
+afib,HEART_CONDITION
+anticoagulant,BLOOD_THINNER
+amlodipine,BLOOD_PRESSURE
+lasix,HEART_CONDITION
+ventilator,VENTILATOR
+vent ,VENTILATOR
+BUN,KIDNEY_CONDITION
+vascular,VASCULAR
+erythromycin,ANTIBIOTIC
+hypoxia,LUNG_CONDITION
+CBC,LABS
+xray,FALL
+paranoid,ALTERED_MENTAL_STATE
+hypotension,BLOOD_PRESSURE
+coronary ,HEART_CONDITION
+dressing,WOUND
+neuropathy,DIABETES
+floor,FALL
+chest xray,LUNG_CONDITION
+chest ,LUNG_CONDITION

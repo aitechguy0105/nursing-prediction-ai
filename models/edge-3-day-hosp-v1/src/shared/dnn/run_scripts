@@ -1,0 +1,59 @@
+# Establish a reasonable baseline...  
+python train.py 
+
+# Can we run batch size 128?
+python train.py --batch_size=128 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/1
+
+# Can we run batch_size = 256?
+python train.py --batch_size=256 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/2
+
+# Can we use a higher learning rate?  Nope... 
+python train.py --batch_size=128 --lr=0.001 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/3
+
+# Try out learning h0 - doesn't seem to help so drop it. Might work but need more regularization and lower lr...  
+python train.py --batch_size=128 --learn_h0 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/4
+
+# Try max aggregation... - 5.  Seems like a win - 5
+python train.py --batch_size=256 --embed_mode=max --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/5
+
+# Try random embeddings instead of pretraining - 6  
+python train.py --batch_size=256 --embed_mode=max --random_embed --embed_dim=200 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/6
+
+# Try another layer in rnn; use dropout? Ixnay on dropout.  - 7
+python train.py --batch_size=256  --embed_mode=max --rnn_layers=2 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/7
+
+# 2 layer rnn with random embeddings - 8 ***
+python train.py --batch_size=256  --embed_mode=max --random_embed --embed_dim=200 --rnn_layers=2 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/8
+
+# Use FFN before feeding embeddings into FFN? - 9
+python train.py --batch_size=256  --embed_mode=max --ffn --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/9
+
+# random, ffn - 10
+python train.py --batch_size=256 --ffn --embed_mode=max --random_embed --embed_dim=200 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/10
+
+# 2 layer RNN, FFN - 11 - this is very volatile - does it help to lower learning rate?  
+python train.py --batch_size=256 --embed_mode=max --ffn --rnn_layers=2 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/11
+
+# 2 layer RNN, FFN, random - 12
+python train.py --batch_size=256 --embed_mode=max --ffn --rnn_layers=2 --random_embed --embed_dim=200 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/12
+
+# 2 layer rnn, ffn, pretrained, and learned h0 - 13; yup, just does not work as intended despite conventional wisdom.  
+python train.py --batch_size=256 --learn_h0 --embed_mode=max --ffn --rnn_layers=2 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/13
+
+# 2 layer rnn, ffn, pretrained, and mean agg - 14
+python train.py --batch_size=256 --ffn --rnn_layers=2 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/14
+
+# ?best current with batch_size=512 - 15
+python train.py --batch_size=512  --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/15
+
+# rnn layers - 16
+python train.py --batch_size=512 --rnn_layers=2 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/16
+
+# Increase dim of rnn - 17
+python train.py --batch_size=512 --rnn_dim=400 --save_dir=/home/ubuntu/saivahc/models/infinity-3-day-hosp/data/processed/rnn/results/17
+
+
+# Increase layers of rnn
+
+
+

@@ -1,0 +1,27 @@
+training_config:
+  model_type: v3
+  model_version: "1.0.0"
+  organization_configs_setup:
+    - organization_id: tanabellhs
+      ml_model_org_config_id: ${.organization_id}
+    - organization_id: sarrento
+      ml_model_org_config_id: ${.organization_id}
+  training_metadata:
+    vector_model: SpacyModel
+    experiment_dates:
+      train_start_date: '2022-01-01'
+      test_end_date: '2023-05-31'
+  all_datasets: [
+    'master_patient_lookup',
+    'patient_census',
+    'patient_rehosps',
+    'patient_demographics',
+    'patient_diagnosis',
+    'patient_vitals',
+    'patient_meds',
+    'patient_orders',
+    'patient_alerts',
+    'patient_progress_notes',
+    'patient_lab_results',
+    'patient_admissions'
+]

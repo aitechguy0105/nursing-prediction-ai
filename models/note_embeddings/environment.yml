@@ -1,0 +1,26 @@
+name: base
+channels:
+  - conda-forge
+  - defaults
+  - pytorch
+dependencies:
+  - black
+  - flake8
+  - pandas
+  - pyarrow
+  - sqlalchemy
+  - scikit-learn
+  - pyodbc
+  - jupyterlab
+  - psycopg2
+  - boto3
+  - mlflow
+  - s3fs
+  - pip
+  - fire
+  - gensim
+  - fastai::fastai
+  - pip:
+    - eliot
+    - eliot-tree
+    - awscli

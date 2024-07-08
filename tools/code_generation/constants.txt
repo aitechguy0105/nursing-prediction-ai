@@ -1,0 +1,7 @@
+
+# ==============================={{ client }}=========================================
+MODELS['{{ client }}']['s3_folder'] = '{{ s3_folder }}'
+MODELS['{{ client }}']['training_start_date'] = '{{ training_start_date }}'
+MODELS['{{ client }}']['vector_model_s3_path'] = 's3://saiva-models/progress_note_embeddings/v1'
+{% for key, value in model_dict.items() %}MODELS['{{ client }}'][{{key}}] = '{{value.model_id}}'
+{% endfor %}

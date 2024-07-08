@@ -1,0 +1,133 @@
+featurization:
+  census:
+    use_conditional_functions: false
+  alerts:
+    generate_na_indicators: false
+    nonsystem_alerts_with_stop_watch_feature: true
+  vitals:
+    generate_na_indicators: false
+    vtl_nd_mean_diff_use_calendar_days_shift: true
+    vtl_use_correct_rolling_windows: true
+    vtl_ffill_na: false
+  orders:
+    generate_na_indicators: false
+    use_conditional_functions: false
+    pivot_aggfunc_sum: false
+  meds:
+    generate_na_indicators: false
+    use_conditional_functions: false
+  rehosp:
+    generate_na_indicators: false
+    fill_planned_with_no: true
+  diagnosis:
+    generate_na_indicators: false
+    use_conditional_functions: false
+    pivot_aggfunc_sum: false
+  assessments:
+    use_conditional_functions: true
+  labs:
+    use_conditional_functions: false
+    min_lab_type_count_for_days_since: 10 # the minimal number of appearances of the single profiledescription value to be included into days since featurization
+    top_lab_type_count: 75
+    union_lab_type_count: 300
+    pivot_aggfunc_sum: false
+  immunizations:
+    use_conditional_functions: false
+  risks:
+    use_conditional_functions: false
+  mds:
+    mds_assessment_types_to_use: ['NQ', 'NC', 'NP', 'NPP']
+    feature_dtypes:
+      mds_medicarerug_1st_previous_value: null
+      mds_medicarerug_2nd_previous_value: null
+      mds_medicarecmi_1st_previous_value: 'Int8'
+      mds_medicarecmi_2nd_previous_value: 'Int8'
+      mds_adlscore_1st_previous_value: 'Int8'
+      mds_adlscore_2nd_previous_value: 'Int8'
+      mds_rug_category_1st_previous_value: 'category'
+      mds_rug_category_2nd_previous_value: 'category'
+      mds_depression_1st_previous_value: 'Int8'
+      mds_depression_2nd_previous_value: 'Int8'
+      mds_nursing_level_1st_previous_value: 'Int8'
+      mds_nursing_level_2nd_previous_value: null
+      mds_rehab_level_1st_previous_value: 'Int8'
+      mds_rehab_level_2nd_previous_value: 'Int8'
+      mds_adlscore_diff: 'Int8'
+      mds_medicarecmi_diff: 'Int8'
+    depression_info:
+      depression_codes: ['HB2', 'HC2', 'HD2', 'HE2', 'LB2', 'LC2', 'LD2', 'LE2', 'CA2', 'CB2', 'CC2', 'CD2', 'CE2']
+      non_depression_codes: ['HB1', 'HC1', 'HD1', 'HE1', 'LB1', 'LC1', 'LD1', 'LE1', 'CA1', 'CB1', 'CC1', 'CD1', 'CE1']
+    nursing_level:
+      more_nursing_codes: ['BA2', 'BB2', 'PA2', 'PB2', 'PC2', 'PD2', 'PE2']
+      less_nursing_codes: ['BA1', 'BB1', 'PA1', 'PB1', 'PC1', 'PD1', 'PE1']
+    rehab_level:
+      rehab_mapping:
+        RU: 5
+        RV: 4
+        RH: 3
+        RM: 2
+        RL: 1
+  adt:
+    days_since_last_admission_v2: true
+train_model:
+  cutoff: 0.15
+client_configuration:
+  multiple_clients: false
+  facilities: null
+automatic_training:
+  required_features_preprocess: ['patient_census', 'patient_rehosps', 'patient_adt', 'patient_demographics', 'patient_admissions']
+  required_features_post_feature_engineering_merge: ['patient_census']
+  features_list: [
+      'patient_demographics',
+      'patient_census',
+      'patient_rehosps',
+      'patient_admissions',
+      'patient_diagnosis',
+      'patient_vitals',
+      'patient_meds',
+      'patient_orders',
+      'patient_alerts',
+      'patient_immunizations',
+      'patient_risks',
+      'patient_assessments',
+      'patient_adt',
+      'patient_progress_notes',
+      'patient_lab_results',
+      #'patient_mds' # swithced off by default
+  ]
+  datasets_generation:
+    iden_cols: ['censusdate', 'facilityid', 'masterpatientid', 'LFS', 'primaryphysicianid', 'payername', 'to_from_type', 'client', 'admissionstatus']
+training_config:
+  model_type: v6
+  model_version: "1.0.0"
+  organization_configs_setup:
+    - organization_id: null
+      datasource_id: ${.organization_id}
+    - organization_id: null
+      datasource_id: ${.organization_id}
+  training_metadata:
+    vector_model: SpacyModel
+    experiment_dates:
+      train_start_date: null
+      test_end_date: null
+    hyper_parameter_tuning: true
+    optuna_time_budget: 172800
+  all_datasets: [
+    'master_patient_lookup',
+    'patient_census',
+    'patient_rehosps',
+    'patient_demographics',
+    'patient_diagnosis',
+    'patient_vitals',
+    'patient_meds',
+    'patient_orders',
+    'patient_alerts',
+    'patient_progress_notes',
+    'patient_immunizations',
+    'patient_risks',
+    'patient_assessments',
+    'patient_lab_results',
+    'patient_adt',
+    'patient_admissions',
+    # 'patient_mds' # switched off by default
+]

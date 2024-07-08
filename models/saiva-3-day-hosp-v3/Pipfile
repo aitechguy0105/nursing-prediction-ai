@@ -1,0 +1,53 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+black = "==20.8b0"
+click = "==7.1.1"
+flake8 = "==3.9.2"
+smart-open = "==5.1.0"
+urllib3 = "==1.25.11"
+pyodbc = "==4.0.35"
+psycopg2-binary = "==2.9.5"
+pandas = "==1.3.0"
+pyarrow = "==11.0.0"
+numpy = "==1.24.2"
+boto3 = "==1.26.78"
+awscli = "==1.27.78"
+fire = "0.5.0"
+s3fs = "==0.4.0"
+openpyxl = "==3.1.1"
+scikit-learn = "==1.2.1"
+nodejs = "==0.1.1"
+pytest = "==5.4.3"
+lightgbm = "==2.3.0"
+shap = "==0.33.0"
+eliot = "==1.11.0"
+eliot-tree = "==18.1.1"
+mmh3 = "==2.5.1"
+dill = "==0.3.1.1"
+hyperopt = "==0.2.7"
+spacy = "==3.0.8"
+scispacy = "==0.4.0"
+negspacy = "==1.0.0"
+en-core-sci-lg = {file = "https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_core_sci_lg-0.4.0.tar.gz"}
+nltk = "==3.8.1"
+gensim = "==4.3.0"
+Flask = "==1.1.4"
+markupsafe = "==2.0.1"
+Jinja2 = "==2.11.3"
+SQLAlchemy = "==1.3.11"
+python-Levenshtein = "==0.20.9"
+sentry-sdk = "==1.5.12"
+saiva-internal-sdk-python = {git = "ssh://git@github.com/saivaai/saiva-internal-sdk-python.git", ref = "v1.0.32"}
+typing_extensions = "==4.4.0" # fix for error for spacy "issubclass error" https://github.com/explosion/spaCy/issues/12659
+omegaconf = "==2.2.1"
+mlflow = "==1.26.1"
+
+[dev-packages]
+jupyterlab = "==1.2.4"
+
+[requires]
+python_version = "3.8.16"

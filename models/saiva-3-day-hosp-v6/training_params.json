@@ -1,0 +1,37 @@
+{
+    "run_id": "MLOP-907-multiple-clients",
+    "optuna_time_budget": 10,
+    "force_regenerate": true,
+    "experiment_dates": {
+        "train_start_date": "2023-01-01",
+        "test_end_date": "2023-12-01"
+    },
+    "client_configurations": [
+        {
+            "client": "tanabellhs",
+            "datasource_id": "tanabellhs",
+            "experiment_dates_facility_wise_overrides": {
+                "1": {
+                    "train_start_date": "2023-01-05",
+                    "train_end_date": "2023-05-01",
+                    "validation_start_date": "2023-05-02",
+                    "validation_end_date": "2023-06-01",
+                    "test_start_date": "2023-06-02",
+                    "test_end_date": "2023-07-01"
+                }
+            }
+        },
+        {
+            "client": "sarrento",
+            "experiment_dates": {
+                "train_start_date": "2023-01-03",
+                "train_end_date": "2023-05-03",
+                "validation_start_date": "2023-05-04",
+                "validation_end_date": "2023-06-03",
+                "test_start_date": "2023-06-04",
+                "test_end_date": "2023-07-03"
+            }
+        }
+    ],
+    "strategy": "multiple_clients"
+}

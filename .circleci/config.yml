@@ -1,0 +1,356 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@4.12.5
+  aws-ecr: circleci/aws-ecr@8.2.1
+  aws-cli: circleci/aws-cli@4.1.2
+
+staging_base: &staging_base
+  filters:
+    branches:
+      only:
+        - staging
+
+prod_base: &prod_base
+  filters:
+    branches:
+      only:
+        - main
+
+dev_base: &dev_base
+  filters:
+    branches:
+      only:
+        - dev
+
+feature_base: &feature_base
+  filters:
+    branches:
+      ignore:
+        - main
+        - staging
+        - dev
+
+jobs:
+  code_scan:
+    docker:
+      - image: cimg/python:3.11.1
+    resource_class: small
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Run code scan
+          command: |
+            branch=$(echo "${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH}" | sed 's/[^a-zA-Z0-9]/-/g')
+            apt-get update && apt-get install jq -y
+            sh .circleci/run_codeguru_security.sh $branch . us-east-1
+      - run:
+          name: Process results and notify slack
+          command: |
+            branch=$(echo "${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH}" | sed 's/[^a-zA-Z0-9]/-/g')
+            pip install slack-sdk
+            python .circleci/process_code_scan.py $branch.json $SLACK_ACCESS_TOKEN $SLACK_CODE_SCAN_CHANNEL ${CIRCLE_SHA1:0:7} ${CIRCLE_USERNAME} ${CIRCLE_PROJECT_REPONAME}
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+
+  build_and_push_model:
+    parameters:
+      model_version:
+        default: saiva-3-day-hosp-v3
+        description: Define model
+        type: string
+      env:
+        default: dev
+        description: Environment
+        type: string
+    docker:
+      - image: cimg/base:stable
+    resource_class: medium
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - add_ssh_keys
+      - checkout
+      - run:
+          name: Setup SSH keys
+          command: |
+            cp ~/.ssh/id_rsa ./models/<<parameters.model_version>>/id_rsa
+      - run: cp -r ./static ./models/<<parameters.model_version>>/src/
+      - aws-ecr/build-and-push-image:
+          tag: <<parameters.env>>
+          build-path: ./models/<<parameters.model_version>>
+          repo: <<parameters.model_version>>
+          path: ./models/<<parameters.model_version>>
+          checkout: false
+          push-image: true
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
+
+  build_automated_training:
+    parameters:
+      model_version:
+        default: saiva-3-day-hosp-v6
+        description: Define model
+        type: string
+      env:
+        default: dev
+        description: Environment
+        type: string
+    docker:
+      - image: cimg/base:stable
+    resource_class: medium
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - add_ssh_keys
+      - checkout
+      - run:
+          name: Setup SSH keys
+          command: |
+            cp ~/.ssh/id_rsa ./models/<<parameters.model_version>>/id_rsa
+      - run: cp -r ./static ./models/<<parameters.model_version>>/src/
+      - aws-ecr/build-and-push-image:
+          tag: <<parameters.env>>
+          build-path: ./models/<<parameters.model_version>>
+          repo: saiva-automatic-training
+          path: ./models/<<parameters.model_version>>/src/training_pipeline
+          checkout: false
+          push-image: true
+          extra-build-args: >
+            --build-arg MODEL_TARGET_PATH="."
+            --build-arg AUTOMATIC_TRAINING_TARGET_PATH="src/training_pipeline"
+      - slack/notify:
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: basic_success_1
+
+workflows:
+  dev:
+    jobs:
+      - code_scan:
+          <<: *dev_base
+          context:
+            - aws
+            - slack
+
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v6
+          <<: *dev_base
+          context:
+            - aws
+            - slack
+          env: dev
+
+      - build_v6_automated_training:
+          type: approval
+          <<: *dev_base
+      - build_automated_training:
+          <<: *dev_base
+          requires:
+            - build_v6_automated_training
+          env: dev
+          model_version: saiva-3-day-hosp-v6
+          context:
+            - aws
+            - slack
+
+      - build_legacy_models:
+          type: approval
+          <<: *dev_base
+
+      - build_and_push_model:
+          requires:
+            - build_legacy_models
+          model_version: saiva-3-day-hosp-v3
+          <<: *dev_base
+          context:
+            - aws
+            - slack
+          env: dev
+      - build_and_push_model:
+          requires:
+            - build_legacy_models
+          model_version: saiva-3-day-hosp-v5
+          <<: *dev_base
+          context:
+            - aws
+            - slack
+          env: dev
+
+  staging:
+    jobs:
+      - code_scan:
+          <<: *staging_base
+          context:
+            - aws
+            - slack
+
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v6
+          <<: *staging_base
+          context:
+            - aws
+            - slack
+          env: staging
+
+      - build_v6_automated_training:
+          type: approval
+          <<: *staging_base
+      - build_automated_training:
+          <<: *staging_base
+          requires:
+            - build_v6_automated_training
+          env: staging
+          model_version: saiva-3-day-hosp-v6
+          context:
+            - aws
+            - slack
+
+      - build_legacy_models:
+          type: approval
+          <<: *staging_base
+      - build_and_push_model:
+          requires:
+            - build_legacy_models
+          model_version: saiva-3-day-hosp-v3
+          <<: *staging_base
+          context:
+            - aws
+            - slack
+          env: staging
+      - build_and_push_model:
+          requires:
+            - build_legacy_models
+          model_version: saiva-3-day-hosp-v5
+          <<: *staging_base
+          context:
+            - aws
+            - slack
+          env: staging
+
+  prod:
+    jobs:
+      - code_scan:
+          <<: *prod_base
+          context:
+            - aws
+            - slack
+
+      - build_models:
+          type: approval
+          <<: *prod_base
+
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v6
+          <<: *prod_base
+          requires:
+            - build_models
+          env: prod
+          context:
+            - aws
+            - slack
+
+      - build_v6_automated_training:
+          type: approval
+          <<: *prod_base
+      - build_automated_training:
+          <<: *prod_base
+          requires:
+            - build_v6_automated_training
+          env: prod
+          model_version: saiva-3-day-hosp-v6
+          context:
+            - aws
+            - slack
+
+      - build_legacy_models:
+          type: approval
+          <<: *prod_base
+          requires:
+            - build_models
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v3
+          <<: *prod_base
+          requires:
+            - build_legacy_models
+          env: prod
+          context:
+            - aws
+            - slack
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v5
+          <<: *prod_base
+          requires:
+            - build_legacy_models
+          env: prod
+          context:
+            - aws
+            - slack
+
+  feature:
+    jobs:
+      - code_scan:
+          <<: *feature_base
+          context:
+            - aws
+            - slack
+
+      - build_v3:
+          type: approval
+          <<: *feature_base
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v3
+          <<: *feature_base
+          requires:
+            - build_v3
+          env: dev
+          context:
+            - aws
+            - slack
+
+      - build_v5:
+          type: approval
+          <<: *feature_base
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v5
+          <<: *feature_base
+          requires:
+            - build_v5
+          env: dev
+          context:
+            - aws
+            - slack
+
+      - build_v6:
+          type: approval
+          <<: *feature_base
+      - build_and_push_model:
+          model_version: saiva-3-day-hosp-v6
+          <<: *feature_base
+          requires:
+            - build_v6
+          env: dev
+          context:
+            - aws
+            - slack
+
+      - build_v6_automated_training:
+          type: approval
+          <<: *feature_base
+      - build_automated_training:
+          <<: *feature_base
+          requires:
+            - build_v6_automated_training
+          env: dev
+          model_version: saiva-3-day-hosp-v6
+          context:
+            - aws
+            - slack

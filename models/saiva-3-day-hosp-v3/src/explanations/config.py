@@ -1,0 +1,117 @@
+from pytz import timezone
+
+exp_dictionary = {
+
+    'default': {
+        'diet_order': ["nepro", "nepro (oral)", "npo", "not applicable-npo only", "puree", "pureed",
+                       "puree with ground meats",
+                       "prostat sf awc", "pro-stat 101", "pro-stat 64", "pro-stat awc", "pro-stat sugar free",
+                       "pro-stat profile",
+                       "prostat sugar free", "prostat liquid", "prostat, 64", "prostat awc",
+                       "calorically dense oral supplement",
+                       "mechanical soft", "moist mechanical soft", "mechanical soft with ground meats"],
+        'alert_count': [],
+        'alerts': ["more than 2 episodes of loose bm's", "resident has not had a bm within 48 hours",
+                   "resident refused bathing", "resident ate less than 25 percent of meal",
+                   "no bowel movement", "agitated or nervous more than usual",
+                   "tired weak confused or drowsy",
+                   "change in therapy level - decrease"],
+        'diagnosis': ["diseases of the blood and blood-forming organs",
+                      "diseases of the circulatory system",
+                      "endocrine; nutritional; and metabolic diseases and immunity disorders",
+                      "neoplasms",
+                      "mental illness",
+                      "certain conditions originating in the perinatal period",
+                      "congenital anomalies",
+                      "diseases of the skin and subcutaneous tissue",
+                      "diseases of the musculoskeletal system and connective tissue",
+                      "diseases of the digestive system",
+                      "injury and poisoning",
+                      "residual codes; unclassified; all e codes [259. and 260.]",
+                      "infectious and parasitic diseases",
+                      "diseases of the genitourinary system",
+                      "diseases of the nervous system and sense organs",
+                      "diseases of the respiratory system"
+                      ],
+        'labs': ['abnormal - (non-numeric)', 'above high normal', 'above highest instrument scale',
+                 'above upper panic limits',
+                 'below low normal', 'below lower panic limits', 'below lowest instrument scale', 'better',
+                 'intermediate',
+                 'moderately susceptible', 'resistant', 'significant change down',
+                 'significant change up',
+                 'susceptible', 'very abnormal - (non-numeric)', 'very susceptible', 'worse'],
+        'days_since_last_admission': 16,  # MAP the record only if days_since_last_admission < 16
+        'days_since_last_transfer': 31,   # MAP the record only if days_since_last_transfer < 31
+        'med_duration': 30,  # MAP the records only if the med occurred in last 30 days
+        'alert_duration': 14,
+        'diet_order_duration': 30,
+        'diagnostic_order_duration': 30,
+        'lab_duration': 90,
+    },
+
+}
+
+VITAL_FIELD_MAP = {
+    'BP - Systolic': 'systolic',
+    'diastolicvalue': 'diastolic',
+    'Blood Sugar': 'Blood Sugar',
+    'O2 sats': 'O2 Saturation',
+    'Pain Level': 'Pain',
+    'Pulse': 'Pulse',
+    'Respiration': 'Respiration',
+    'Temperature': 'Temperature',
+    'Weight': 'Weight',
+}
+
+FEATURE_GROUP_MAPPING = {
+    'cumsum_all_med_': 'cumsum_med_',
+    r'cumsum_\d+_day_med_': 'cumsum_med_',
+    'cumsum_all_order_': 'cumsum_order_',
+    r'cumsum_\d+_day_order_': 'cumsum_order_',
+    'cumsum_all_alert_': 'cumsum_alert_',
+    r'cumsum_\d+_day_alert_': 'cumsum_alert_',
+    'cumsum_all_dx_': 'cumsum_dx_',
+    r'cumsum_\d+_day_dx_': 'cumsum_dx_',
+    'cumsum_all_labs_': 'cumsum_labs_',
+    r'cumsum_\d+_day_labs_': 'cumsum_labs_',
+}
+
+FEATURE_TYPE_MAPPING = {
+    r'^cumsum_all_med_.*': 'Medication',
+    r'^cumsum_\d+_day_med_.*': 'Medication',
+    r'^na_indictator_med_.*': 'Medication',
+    r'^cumsum.*diagnostic_orders': 'Diagnostic Order',
+    r'^na_indictator_order_.*diagnostic_orders': 'Diagnostic Order',
+    r'^cumsum_all_order_.*': 'Diet Order',
+    r'^cumsum_\d+_day_order_.*': 'Diet Order',
+    r'^na_indictator_order_.*': 'Diet Order',
+    r'^cumsum_all_alert_.*': 'Alert',
+    r'^cumsum_\d+_day_alert_.*': 'Alert',
+    r'^na_indictator_alert_.*': 'Alert',
+    r'^cumsum_all_dx_.*': 'Diagnosis',
+    r'^cumsum_\d+_day_dx_.*': 'Diagnosis',
+    r'^na_indictator_dx_.*': 'Diagnosis',
+    r'^cumsum_all_labs_.*': 'Lab',
+    r'^cumsum_\d+_day_labs_.*': 'Lab',
+    r'^na_indictator_labs_.*': 'Lab',
+    r'^vtl_.*': 'Vital',
+    r'^na_indictator_vtl_.*': 'Vital',
+    r'^demo_.*': 'Demographic',
+    r'^na_indictator_religion$': 'Demographic',
+    r'^na_indictator_education$': 'Demographic',
+    r'^na_indictator_race$': 'Demographic',
+    r'^na_indictator_citizenship$': 'Demographic',
+    r'^na_indictator_state$': 'Demographic',
+    r'^dateofbirth_.*': 'Demographic',
+    r'^notes.*': 'Progress Note',
+    r'^hosp_count.*': 'patient_rehosps',
+    r'^hosp_days.*': 'patient_rehosps',
+    r'^na_indictator_hosp_.*': 'patient_rehosps',
+    r'^censusdate_.*': 'patient_census',
+    r'^na_indictator_roomratetypedescription$': 'patient_census',
+    r'^na_indictator_carelevelcode$': 'patient_census',
+    r'^na_indictator_beddescription$': 'patient_census',
+    r'^admissions.*': 'Admissions',
+}
+
+TZ = timezone('US/Eastern')

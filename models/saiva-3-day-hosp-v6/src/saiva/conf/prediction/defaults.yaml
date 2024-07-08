@@ -1,0 +1,59 @@
+featurization:
+  census:
+    use_conditional_functions: false
+  alerts:
+    alertdescription_types: null
+    generate_na_indicators: true
+    nonsystem_alerts_with_stop_watch_feature: false
+  vitals:
+    generate_na_indicators: true
+    vtl_nd_mean_diff_use_calendar_days_shift: false
+    vtl_use_correct_rolling_windows: false
+    vtl_ffill_na: true
+  orders:
+    generate_na_indicators: true
+    use_conditional_functions: false
+    pivot_aggfunc_sum: false
+  meds:
+    generate_na_indicators: true
+    use_conditional_functions: false
+  rehosp:
+    generate_na_indicators: true
+    fill_planned_with_no: false
+  diagnosis:
+    generate_na_indicators: true
+    use_conditional_functions: false
+    pivot_aggfunc_sum: false
+  assessments:
+    use_conditional_functions: false
+  labs:
+    use_conditional_functions: false
+    lab_types_for_days_since: null
+    pivot_aggfunc_sum: false
+  immunizations:
+    use_conditional_functions: false
+  risks:
+    use_conditional_functions: false
+  adt:
+    days_since_last_admission_v2: false
+postprocessing:
+  missing_column_fill_values:
+    - pattern: "cumidx|cumsum"
+      value: 0
+    - pattern: "na_indictator"
+      value: true
+    - pattern: "days_since_last_event"
+      value: 9999
+    - pattern: "^immun_"
+      value: 0
+client_configuration:
+  multiple_clients: false
+  facilities: null
+iden_cols:
+  - censusdate
+  - facilityid
+  - masterpatientid
+  - primaryphysicianid
+  - payername
+  - to_from_type
+  - admissionstatus

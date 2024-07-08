@@ -1,0 +1,28 @@
+training_config:
+  model_type: v5
+  model_version: "1.0.0"
+  organization_configs_setup:
+    - organization_id: ahc
+      ml_model_org_config_id: ${.organization_id}
+    - organization_id: cardinalritter
+      ml_model_org_config_id: ${.organization_id}
+  training_metadata:
+    vector_model: SpacyModel
+    experiment_dates:
+      train_start_date: '2023-01-01'
+      test_end_date: '2023-05-31'
+    hyper_parameter_tuning: true
+  all_datasets: [
+    'master_patient_lookup',
+    'patient_census',
+    'patient_rehosps',
+    'patient_demographics',
+    'patient_diagnosis',
+    'patient_vitals',
+    'patient_meds',
+    'patient_orders',
+    'patient_progress_notes',
+    'patient_admissions',
+    'patient_alerts',
+    'patient_lab_results',
+]

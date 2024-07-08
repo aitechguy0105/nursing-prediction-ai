@@ -1,0 +1,315 @@
+"""
+NOTE:
+-   If patientmrn is NULL consider PatientIDNumber while populating
+    facility_patient table in saivadb
+-   `dateoftransfer` & `dateofadmission` is datetime field but since there are duplicate rows
+    for given patient in a given day, to remove duplicate we strip time
+    part from these two fields
+"""
+
+from datetime import datetime, timedelta
+
+from airflow.contrib.operators.ecs_operator import ECSOperator
+from airflow.operators.python_operator import PythonOperator
+from utils.email import notify_email
+from utils.scale_out_asg import model_run_completed
+from utils.scale_out_asg import scale_out
+from utils.settings import CACHED_S3_BUCKET
+from utils.settings import ECS_CLUSTER
+from utils.settings import ENV
+from utils.settings import ETL_TASK
+from utils.settings import SCHEDULE_INTERVAL
+from utils.settings import SECURITY_GROUPS
+from utils.settings import SUBNETS
+from utils.settings import SAIVA_MODELS
+
+from airflow import DAG
+
+# Key: facility_id, value: dict containing emails and model_id
+FACILITY_IDS = {{ facility_dict_string }}
+
+CLIENT = '{{ client }}'
+
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2020, 3, 20),
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+dag = DAG(
+    CLIENT,
+    default_args=default_args,
+    schedule_interval=SCHEDULE_INTERVAL,
+    catchup=False,
+    max_active_runs=1,
+)
+
+transfer_client_data = ECSOperator(
+    dag=dag,
+    task_id='transfer_client_data',
+    task_definition=ETL_TASK,
+    cluster=ECS_CLUSTER,
+    overrides={
+        'containerOverrides': [
+            {
+                'name': 'etl',
+                'command': [
+                    '/bin/bash',
+                    '-c',
+                    f"""aws s3 sync s3://saiva-shared-{CLIENT}/ s3://saiva-{ENV}-data-bucket/data/{CLIENT}/incremental/ --exclude="*" --include="{{ incremental_file_prefix }}*" """,
+                ],
+            }
+        ]
+    },
+    launch_type='FARGATE',
+    aws_conn_id=None,
+    network_configuration={
+        'awsvpcConfiguration': {
+            'securityGroups': SECURITY_GROUPS,
+            'subnets': SUBNETS,
+            'assignPublicIp': 'DISABLED',
+        }
+    },
+    on_failure_callback=notify_email,
+)
+
+load_client_data = ECSOperator(
+    dag=dag,
+    task_id='load_client_data',
+    task_definition=ETL_TASK,
+    cluster=ECS_CLUSTER,
+    overrides={
+        'containerOverrides': [
+            {
+                'name': 'etl',
+                'command': [
+                    '/bin/bash',
+                    '-c',
+                    f'python /code/load_client_db.py --client {CLIENT}',
+                ],
+            }
+        ]
+    },
+    launch_type='FARGATE',
+    aws_conn_id=None,
+    network_configuration={
+        'awsvpcConfiguration': {
+            'securityGroups': SECURITY_GROUPS,
+            'subnets': SUBNETS,
+            'assignPublicIp': 'DISABLED',
+        }
+    },
+    on_failure_callback=notify_email,
+)
+
+sync_facility_data = ECSOperator(
+    dag=dag,
+    task_id='sync-facility-table',
+    task_definition=ETL_TASK,
+    cluster=ECS_CLUSTER,
+    overrides={
+        'containerOverrides': [
+            {
+                'name': 'etl',
+                'command': [
+                    '/bin/bash',
+                    '-c',
+                    f"python /code/database_data_sync.py --client {CLIENT} --query 'select facilityid, facilityname, lineofbusiness from dbo.view_ods_facility where facilityid in {tuple(FACILITY_IDS.keys())}' --destination_table facility",
+                ],
+            }
+        ]
+    },
+    launch_type='FARGATE',
+    aws_conn_id=None,
+    network_configuration={
+        'awsvpcConfiguration': {
+            'securityGroups': SECURITY_GROUPS,
+            'subnets': SUBNETS,
+            'assignPublicIp': 'DISABLED',
+        }
+    },
+    on_failure_callback=notify_email,
+)
+
+sync_transfers_data = ECSOperator(
+    dag=dag,
+    task_id="sync-hospital-transfers",
+    task_definition=ETL_TASK,
+    cluster=ECS_CLUSTER,
+    overrides={
+        "containerOverrides": [
+            {
+                "name": "etl",
+                "command": [
+                    "/bin/bash",
+                    "-c",
+                    f"""python /code/database_data_sync.py --client {CLIENT} --unique_keys '["client", "patientid", "dateoftransfer"]' --query "select distinct tl.patientid, tl.facilityid, CONVERT(varchar, tl.dateoftransfer, 23) as dateoftransfer, tl.transferreason, tl.purposeofstay, tl.transferredto, tl.otherreasonfortransfer, tl.planned, tl.outcome, tl.payertype, tl.lengthofstay, tl.transferredwithin30daysofadmission, fp.FirstName as patientfirstname, fp.LastName as patientlastname, fp.patientmrn as medicalrecordnumber, tl.tofromtype, tl.payerdescription, tl.primaryphysiciantitle, tl.primaryphysicianfirstname, tl.primaryphysicianlastname, tl.primaryphysicianprofession, tl.originaladmissiondate, tl.lastadmissiondate, tl.hospitaldischargedate, '{CLIENT}' AS client from dbo.view_ods_hospital_transfers_transfer_log_v2 tl JOIN view_ods_facility_patient fp ON (tl.patientid=fp.patientid AND tl.facilityid=fp.facilityid) WHERE tl.dateoftransfer >= '2011-01-01' " --destination_table hospital_transfers""",
+                ],
+            }
+        ]
+    },
+    launch_type="FARGATE",
+    aws_conn_id=None,
+    network_configuration={
+        "awsvpcConfiguration": {
+            "securityGroups": SECURITY_GROUPS,
+            "subnets": SUBNETS,
+            "assignPublicIp": "DISABLED",
+        }
+    },
+    on_failure_callback=notify_email,
+)
+
+sync_admissions_data = ECSOperator(
+    dag=dag,
+    task_id="sync-hospital-admissions",
+    task_definition=ETL_TASK,
+    cluster=ECS_CLUSTER,
+    overrides={
+        "containerOverrides": [
+            {
+                "name": "etl",
+                "command": [
+                    "/bin/bash",
+                    "-c",
+                    f"""python /code/database_data_sync.py --client {CLIENT} --unique_keys '["client", "patientid", "dateofadmission"]' --query "select distinct al.patientid, al.facilityid, CONVERT(varchar, al.dateofadmission, 23) as dateofadmission, fp.FirstName as patientfirstname, fp.LastName as patientlastname, al.admissionstatus, al.admittedfrom, al.primaryphysiciantitle, al.primaryphysicianfirstname, al.primaryphysicianlastname, al.primaryphysicianprofession, al.medicalrecordnumber, al.hospitaldischargedate, al.tofromtypedescription, al.payertype, al.payertypedescription, al.admissionineffectivedate, al.admittedwithinlast30days, al.transferredwithin30daysofadmission, '{CLIENT}' AS client from dbo.view_ods_hospital_transfers_admission_log al JOIN view_ods_facility_patient fp ON (al.patientid=fp.patientid AND al.facilityid=fp.facilityid) WHERE al.dateofadmission >= '2011-01-01' " --destination_table hospital_admissions""",
+                ],
+            }
+        ]
+    },
+    launch_type="FARGATE",
+    aws_conn_id=None,
+    network_configuration={
+        "awsvpcConfiguration": {
+            "securityGroups": SECURITY_GROUPS,
+            "subnets": SUBNETS,
+            "assignPublicIp": "DISABLED",
+        }
+    },
+    on_failure_callback=notify_email,
+)
+
+sync_facility_patient_data = ECSOperator(
+    dag=dag,
+    task_id='sync-facility-patient-data',
+    task_definition=ETL_TASK,
+    cluster=ECS_CLUSTER,
+    overrides={
+        'containerOverrides': [
+            {
+                'name': 'etl',
+                'command': [
+                    '/bin/bash',
+                    '-c',
+                    f"""python /code/database_data_sync.py --client {CLIENT} --query "select patientid, facilityid, masterpatientid, ISNULL(patientmrn, PatientIDNumber) as patientmrn, originaladmissiondate, recentadmissiondate, initialadmissiondate, firstname, lastname from dbo.view_ods_facility_patient WHERE InitialAdmissionDate <= '3000-12-31' " --destination_table facility_patient""",
+                ],
+            }
+        ]
+    },
+    launch_type='FARGATE',
+    aws_conn_id=None,
+    network_configuration={
+        'awsvpcConfiguration': {
+            'securityGroups': SECURITY_GROUPS,
+            'subnets': SUBNETS,
+            'assignPublicIp': 'DISABLED',
+        }
+    },
+    on_failure_callback=notify_email,
+)
+
+# Scale out the no. of Instance required and wait for 5 minutes until the instances boot
+scale_out_asg = PythonOperator(
+    task_id='scale-out-asg',
+    python_callable=scale_out,
+    op_kwargs={'instances': len(FACILITY_IDS.keys()), 'client': CLIENT},
+    dag=dag,
+    on_failure_callback=notify_email,
+)
+
+# This task indicates the DAG has completed all the run_model tasks
+# Since trigger_rule=all_done, this task runs regardless of upstream success/fail
+completed_run_model = PythonOperator(
+    task_id='completed-run-model',
+    python_callable=model_run_completed,
+    trigger_rule="all_done",
+    dag=dag,
+    on_failure_callback=notify_email,
+)
+
+load_client_data.set_upstream(transfer_client_data)
+sync_facility_data.set_upstream(load_client_data)
+sync_facility_patient_data.set_upstream(load_client_data)
+sync_transfers_data.set_upstream(load_client_data)
+sync_admissions_data.set_upstream(load_client_data)
+scale_out_asg.set_upstream(load_client_data)
+
+for i in FACILITY_IDS.keys():
+    run_model = ECSOperator(
+        dag=dag,
+        task_id=f'facility-{i}-model',
+        task_definition=f'{ENV}-{SAIVA_MODELS[CLIENT]}',
+        cluster=ECS_CLUSTER,
+        overrides={
+            'containerOverrides': [
+                {
+                    'name': SAIVA_MODELS[CLIENT],
+                    'command': [
+                        '/bin/bash',
+                        '-c',
+                        f"python /src/run_model.py --client {CLIENT} --facilityids '[{i}]' " + "--prediction-date {{ next_ds }} " + f"--s3-bucket {CACHED_S3_BUCKET} --replace_existing_predictions True"
+                    ],
+                }
+            ]
+        },
+        launch_type='EC2',
+        aws_conn_id=None,
+        network_configuration={
+            'awsvpcConfiguration': {
+                'securityGroups': SECURITY_GROUPS,
+                'subnets': SUBNETS,
+                'assignPublicIp': 'DISABLED',
+            }
+        },
+        on_failure_callback=notify_email,
+    )
+
+    run_model.set_upstream(scale_out_asg)
+    completed_run_model.set_upstream(run_model)
+
+    # If model_id is configured then send reports
+    if FACILITY_IDS[i]['model_id']:
+        send_report = ECSOperator(
+            dag=dag,
+            task_id=f'facility-{i}-report',
+            task_definition=ETL_TASK,
+            cluster=ECS_CLUSTER,
+            overrides={
+                'containerOverrides': [
+                    {
+                        'name': 'etl',
+                        'command': [
+                            '/bin/bash',
+                            '-c',
+                            f"python /code/send_report.py --client {CLIENT} --facility-id {i} --model-id {FACILITY_IDS[i]['model_id']} " + "--prediction-date {{ next_ds }} --from-email automation@saivahc.com "
+                        ],
+                    }
+                ]
+            },
+            launch_type='FARGATE',
+            aws_conn_id=None,
+            network_configuration={
+                'awsvpcConfiguration': {
+                    'securityGroups': SECURITY_GROUPS,
+                    'subnets': SUBNETS,
+                    'assignPublicIp': 'DISABLED',
+                }
+            },
+            on_failure_callback=notify_email,
+        )
+
+        send_report.set_upstream(run_model)
